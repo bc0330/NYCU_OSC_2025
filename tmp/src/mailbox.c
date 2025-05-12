@@ -2,12 +2,12 @@
 #include "mini_uart.h"
 #include "utils.h"
 
-volatile unsigned int  __attribute__((aligned(16))) mailbox[36];
+unsigned int  __attribute__((aligned(16))) mailbox[36];
 
-int mailbox_call(void) {
+int mailbox_call(unsigned int channel, unsigned int *_mailbox) {
     // Combine the message address (upper 28 bits) with channel number (lower 4 bits)
     // convert pointer (64-bit, addr length) to unsigned long first, then to unsigned int
-    unsigned int message_addr = ((unsigned int) (unsigned long) &mailbox & ~0xF) | (MBOX_CH_PROP & 0xF); 
+    unsigned int message_addr = ((unsigned int) (unsigned long) _mailbox & ~0xF) | (channel & 0xF); 
     
     /* wait until mailbox is not full*/
 
@@ -24,13 +24,15 @@ int mailbox_call(void) {
         /* check if it corresponds to our message */
         if (message_addr == get32(MBOX_READ))
             /* check if out request has succeeded */
-            return REQUEST_SUCCEEDED == mailbox[1];
+            return REQUEST_SUCCEEDED == _mailbox[1];
         return 0;
     }
     return 0;
 }
 
 void get_board_revision(void) {
+    
+
     mailbox[0] = 7 * 4;                // buffer size in bytes
     mailbox[1] = REQUEST_CODE;
     // tags begin
@@ -41,7 +43,7 @@ void get_board_revision(void) {
     // tags end
     mailbox[6] = END_TAG;
 
-    if (mailbox_call()) { // message passing procedure call, you should implement it following the 6 steps provided above.
+    if (mailbox_call(8, mailbox)) { // message passing procedure call, you should implement it following the 6 steps provided above.
 
         uart_send_string("Board Revision: 0x"); // it should be 0xa020d3 for rpi3 b+
         uart_send_num(mailbox[5], "hex");
@@ -52,6 +54,7 @@ void get_board_revision(void) {
 }
 
 void get_arm_mem(void) {
+
     mailbox[0] = 8 * 4; // buffer size in bytes
     mailbox[1] = REQUEST_CODE;
     // tags begin
@@ -63,7 +66,7 @@ void get_arm_mem(void) {
     // tags end
     mailbox[7] = END_TAG;
 
-    if (mailbox_call()) { // message passing procedure call, you should implement it following the 6 steps provided above.
+    if (mailbox_call(8, mailbox)) { // message passing procedure call, you should implement it following the 6 steps provided above.
 
         uart_send_string("ARM memory base address: "); 
         uart_send_num(mailbox[5], "hex");

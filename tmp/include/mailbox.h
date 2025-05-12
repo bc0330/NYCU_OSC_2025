@@ -35,7 +35,7 @@
 #define END_TAG            0x00000000
 
 
-int mailbox_call(void);
+int mailbox_call(unsigned int channel, unsigned int *mailbox);
 void get_board_revision(void);
 void get_arm_mem(void);
 

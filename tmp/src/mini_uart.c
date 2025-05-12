@@ -71,10 +71,10 @@ void uart_send_num(unsigned long num, char *form) {
         uart_send_string(out);
         
     } else {
-        char out[10];
+        char out[20];
         char decDigits[] = "0123456789";
-        int i = 0, tmp;
-
+        int i = 0;
+        unsigned long tmp;
         if (num == 0) {
             out[i++] = '0';
             out[i] = '\0';

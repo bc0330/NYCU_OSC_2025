@@ -126,6 +126,12 @@ general_irq: //
     load_all
     eret
 
+general_sync: //
+    save_all
+    bl sync_handler
+    load_all
+    eret
+
 .align 11 // vector table should be aligned to 0x800
 .global exception_vector_table
 exception_vector_table: // exception vector table
@@ -147,7 +153,7 @@ exception_vector_table: // exception vector table
   b do_nothing
   .align 7
 
-  b do_nothing
+  b general_sync
   .align 7
   b general_irq
   .align 7

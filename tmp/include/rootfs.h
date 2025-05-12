@@ -28,5 +28,6 @@ struct cpio_newc_header {
 
 void ls();
 void cat(char* filename);
+void *find_user_program(char *filename, int *size);
 
 #endif

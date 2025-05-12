@@ -34,127 +34,107 @@ unsigned long disable_interrupt(void) {
     return daif;
 }
 
-// void sync_handler(trapframe_t *tf) {
-//     unsigned long daif = disable_interrupt();
-//     unsigned long esr;
-//     asm volatile (
-//         "mrs %0, esr_el1\n"
-//         : "=r" (esr)
-//     );
-//     esr = esr >> 26;
-//     switch (esr) {
-//         case 0b010101:  // SVC
-//             syscall_handler(tf);
-//             break;
-//         case 0b100100:  // data abort
-//             // uart_send_string("Data abort\r\n");
-//             break;
-//         case 0b100000:  // instruction abort
-//             uart_send_string("Instruction abort\r\n");
-//             break;
-//         default:
-//             uart_send_string("Unknown exception\r\n");
-//             uart_send_num(esr, "dec");
-//             uart_send_string("\r\n");
-//             // while (1);
-//             break;
-//     }
-//     enable_interrupt(daif);
-// }
+void sync_handler(trapframe_t *tf) {
+    unsigned long daif = disable_interrupt();
+    
+    unsigned long esr;
+    asm volatile (
+        "mrs %0, esr_el1\n"
+        : "=r" (esr)
+    );
+    esr = esr >> 26;
+    switch (esr) {
+        case 0b010101:  // SVC
+            syscall_handler(tf);
+            break;
+        case 0b100100:  // data abort
+            // uart_send_string("Data abort\r\n");
+            break;
+        case 0b100000:  // instruction abort
+            uart_send_string("Instruction abort\r\n");
+            break;
+        default:
+            uart_send_string("Unknown exception\r\n");
+            uart_send_num(esr, "hex");
+            uart_send_string("\r\n");
+            // while (1);
+            break;
+    }
+    enable_interrupt(daif);
+}
 
-// void syscall_handler(trapframe_t *tf) {
-//     // uart_send_string("syscall handler\r\n");
-//     trapframe_t *sp = tf;
+void syscall_handler(trapframe_t *tf) {
+    // uart_send_string("syscall handler\r\n");
+    trapframe_t *sp = tf;
 
-//     unsigned long syscall_num = sp->x[8]; // syscall number
+    unsigned long syscall_num = sp->x[8]; // syscall number
 
-//     unsigned long daif = disable_interrupt();
-//     handle_signal();
-//     enable_interrupt(daif);
+    // handle_signal();
 
-//     switch (syscall_num) {
-//         case 0:   // getpid
-//             sys_get_pid((trapframe_t *)sp);
-//             break;
-//         case 1: { // read
-//             enable_interrupt(0x0);
-//             sys_uart_read((trapframe_t *)sp);
-//             disable_interrupt();
-//             break;
-//         }
-//         case 2: { // write
-//             enable_interrupt(0x0);
-//             sys_uart_write((trapframe_t *)sp);
-//             disable_interrupt();
-//             break;
-//         }
-//         case 3: { // exec
-//             sys_exec((trapframe_t *)sp);
-//             break;
-//         }
-//         case 4: {        // fork
-//             sys_fork((trapframe_t *)sp);
-//             break;
-//         }
-//         case 5: {        // exit
-//             sys_exit((trapframe_t *)sp);
-//             break;
-//         }
-//         case 6: {        // mbox call
-//             sys_mbox_call((trapframe_t *)sp);
-//             break;
-//         }
-//         case 7: {        
-//             sys_kill((trapframe_t *)sp);
-//             break;
-//         }
-//         case 8: {
-//             sys_signal((trapframe_t *)sp);
-//             break;
-//         }
-//         case 9: {
-//             sys_sigkill((trapframe_t *)sp);
-//             break;
-//         }
-//         case 10: {       // get time
-//             sys_sigreturn((trapframe_t *)sp);
-//             break;
-//         }
-//         default:
-//             uart_send_string("Unknown syscall\r\n");
-//             uart_send_num(syscall_num, "dec");
-//             uart_send_string("\r\n");
-//             sp->x[0] = -1; // return -1
-//             break;
-//     }
-// }
+    switch (syscall_num) {
+        case 0:   // getpid
+            sys_get_pid((trapframe_t *)sp);
+            break;
+        case 1: { // read
+            enable_interrupt(0x0);
+            sys_uart_read((trapframe_t *)sp);
+            disable_interrupt();
+            break;
+        }
+        case 2: { // write
+            enable_interrupt(0x0);
+            sys_uart_write((trapframe_t *)sp);
+            disable_interrupt();
+            break;
+        }
+        case 3: { // exec
+            sys_exec((trapframe_t *)sp);
+            break;
+        }
+        case 4: {        // fork
+            sys_fork((trapframe_t *)sp);
+            break;
+        }
+        case 5: {        // exit
+            sys_exit((trapframe_t *)sp);
+            break;
+        }
+        case 6: {        // mbox call
+            sys_mbox_call((trapframe_t *)sp);
+            break;
+        }
+        case 7: {        
+            sys_kill((trapframe_t *)sp);
+            break;
+        }
+        case 8: {
+            sys_signal((trapframe_t *)sp);
+            break;
+        }
+        case 9: {
+            sys_sigkill((trapframe_t *)sp);
+            break;
+        }
+        case 10: {       // get time
+            sys_sigreturn((trapframe_t *)sp);
+            break;
+        }
+        default:
+            uart_send_string("Unknown syscall\r\n");
+            uart_send_num(syscall_num, "dec");
+            uart_send_string("\r\n");
+            sp->x[0] = -1; // return -1
+            break;
+    }
+}
 
 void irq_handler(void) {
-    unsigned int cpu_irq_src, gpu_irq_src;
+    unsigned int cpu_irq_src;
     // uart_send_string("irq handler\r\n");
     unsigned long daif = disable_interrupt();
-    // handle_signal();
-    // uart_send_num(0, "dec");
+    handle_signal();
 
     cpu_irq_src = get32(CORE0_IRQ_SRC);
-    gpu_irq_src = get32(IRQ_PENDING_1);
-
-    // if (gpu_irq_src & (1 << 29)) {
-    //     // uart interrupt
-    //     unsigned int status = get32(AUX_MU_IIR_REG);
-    //     if (status & 0b100) {
-    //         // receive interrupt
-    //         // disable receive interrupt            
-    //         receive_handler();
-    //     }
-    //     if (status & 0b10) {
-    //         // transmit interrupt
-    //         transmit_handler();
-            
-    //     }
-    // } else {
-    //     // uart_send_string("Unknown interrupt\r\n");
-    // }
 
     if (cpu_irq_src & 0x2) {
         // timer interrupt
@@ -173,71 +153,71 @@ void timer_handler(void) {
         "lsr x0, x0, 5\n" // set timer to 1/32 sec
         "msr cntp_tval_el0, x0\n" // set expired time
     );
-    // schedule();
+    schedule();
 }
 
-// void handle_signal() {
-//     int signal = current_thread->signal;
-//     if (signal == SIGKILL) {
-//         if (signal_handler[SIGKILL] != NULL) {
-//             void *handler_kernel_stack_base = allocate(0x1000); // allocate a new stack for the signal handler
-//             current_thread->signal_kernel_stack_base = handler_kernel_stack_base;
-//             void *handler_stack_base = allocate(0x1000); // allocate a new stack for the signal handler
-//             current_thread->signal_stack_base = handler_stack_base;
-//             memset(handler_kernel_stack_base, 0, 0x1000);
-//             memset(handler_stack_base, 0, 0x1000);
-//             void *handler_stack = (void *)((unsigned long)handler_stack_base + 0x1000);
-//             void *handler_kernel_stack = (void *)((unsigned long)handler_kernel_stack_base + 0x1000);
-//             current_thread->signal = 0; // clear the signal
+void handle_signal() {
+    int signal = current_thread->signal;
+    if (signal == SIGKILL) {
+        if (signal_handler[SIGKILL] != NULL) {
+            void *handler_kernel_stack_base = allocate(0x1000); // allocate a new stack for the signal handler
+            current_thread->signal_kernel_stack_base = handler_kernel_stack_base;
+            void *handler_stack_base = allocate(0x1000); // allocate a new stack for the signal handler
+            current_thread->signal_stack_base = handler_stack_base;
+            memset(handler_kernel_stack_base, 0, 0x1000);
+            memset(handler_stack_base, 0, 0x1000);
+            void *handler_stack = (void *)((unsigned long)handler_stack_base + 0x1000);
+            void *handler_kernel_stack = (void *)((unsigned long)handler_kernel_stack_base + 0x1000);
+            current_thread->signal = 0; // clear the signal
 
-//             switch_to_signal_handler(
-//                 current_thread->context,
-//                 current_thread->signal_context,
-//                 handler_stack,
-//                 signal_handler[SIGKILL],
-//                 handler_kernel_stack,
-//                 handler_kernel_stack_base
-//             );
-//             asm volatile ( "add sp, sp, 0x30"); // discard arguments 
+            switch_to_signal_handler(
+                current_thread->context,
+                current_thread->signal_context,
+                handler_stack,
+                signal_handler[SIGKILL],
+                handler_kernel_stack,
+                handler_kernel_stack_base
+            );
+            asm volatile ( "add sp, sp, 0x30"); // discard arguments 
 
-//         } else {
-//             sys_exit(NULL);
-//         }
-//     }
-// }
+        } else {
+            sys_exit(NULL);
+        }
+    }
+}
 
-// void switch_to_signal_handler(
-//     unsigned long *normal_context,
-//     unsigned long *signal_context,
-//     void *handler_stack,
-//     void *handler,
-//     void *kernel_stack,
-//     void *kernel_stack_base
-// ) {
-//     asm volatile (
-//         "stp x19, x20, [x1, 16 * 0]\n"
-//         "stp x21, x22, [x1, 16 * 1]\n"
-//         "stp x23, x24, [x1, 16 * 2]\n"
-//         "stp x25, x26, [x1, 16 * 3]\n"
-//         "stp x27, x28, [x1, 16 * 4]\n"
-//         "stp fp, lr, [x1, 16 * 5]\n"
-//         "mov x9, sp\n"
-//         "str x9, [x1, 16 * 6]\n" // save the normal context
+void switch_to_signal_handler(
+    unsigned long *normal_context,
+    unsigned long *signal_context,
+    void *handler_stack,
+    void *handler,
+    void *kernel_stack,
+    void *kernel_stack_base
+) {
+    asm volatile (
+        "stp x19, x20, [x1, 16 * 0]\n"
+        "stp x21, x22, [x1, 16 * 1]\n"
+        "stp x23, x24, [x1, 16 * 2]\n"
+        "stp x25, x26, [x1, 16 * 3]\n"
+        "stp x27, x28, [x1, 16 * 4]\n"
+        "stp fp, lr, [x1, 16 * 5]\n"
+        "mov x9, sp\n"
+        "str x9, [x1, 16 * 6]\n" // save the normal context
 
-//         "mov fp, x5\n"
-//         "mov sp, x4\n"
-//         "mov lr, %0\n" // set the link register to the signal handler
+        "mov fp, x5\n"
+        "mov sp, x4\n"
+        "mov lr, %0\n" // set the link register to the signal handler
 
-//         "mov x9, 0\n"
-//         "msr spsr_el1, x9\n" // set the SPSR to the signal context
-//         "msr elr_el1, x3\n"
-//         "msr sp_el0, x2\n" // set the stack pointer to the signal handler stack
-//         "msr tpidr_el1, x0\n" // set the thread pointer to the kernel stack
-//         "eret\n" // return to the signal handler
-//         : /* no output */
-//         : "r" (sigreturn)
-//     );
-// }
+        "mov x9, 0\n"
+        "msr spsr_el1, x9\n" // set the SPSR to the signal context
+        "msr elr_el1, x3\n"
+        "msr sp_el0, x2\n" // set the stack pointer to the signal handler stack
+        "msr tpidr_el1, x0\n" // set the thread pointer to the kernel stack
+        "eret\n" // return to the signal handler
+        : /* no output */
+        : "r" (sigreturn)
+    );
+}
 
 void sigreturn() {
     asm volatile (

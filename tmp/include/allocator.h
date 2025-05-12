@@ -32,7 +32,7 @@ typedef struct page_info {
 // extern page_info_t alloc_array[PAGE_NUM];
 extern page_info_t *alloc_array; // page info array
 extern int free_list[MAX_ORDER + 1];
-extern unsigned long chunk_list[MAX_CHUNK_ORDER - MIN_CHUNK_ORDER + 1];           // free chunk list for order 4 to 8
+extern unsigned long chunk_list[MAX_CHUNK_ORDER - MIN_CHUNK_ORDER + 1];           // free chunk list for order 4 to 11
 
 void buddy_init();
 

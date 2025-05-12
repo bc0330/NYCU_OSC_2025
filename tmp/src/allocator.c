@@ -42,6 +42,7 @@ void buddy_init() {
 
     uart_send_string("Allocating memory for page info array...\r\n");
     alloc_array = (page_info_t *) startup_alloc(PAGE_NUM * sizeof(page_info_t));
+    
     if (alloc_array == nullptr) {
         uart_send_string("Alloc Error: cannot allocate memory for page info array\n");
         return;
@@ -55,6 +56,7 @@ void buddy_init() {
     for (int i = 0; i <= MAX_ORDER; i++) {
         free_list[i] = -1;
     }
+    free_list[MAX_ORDER] = 0; // the first block is free
 
     // Initialize the free list
     uart_send_string("Initializing free list...\r\n");
@@ -79,7 +81,6 @@ void *allocate(size_t size) {
         uart_send_string(" bytes\n");
         return nullptr;
     }
-
     if (size > power(2, MAX_CHUNK_ORDER)) {
         int page_num = size / PAGE_SIZE;
         if (size % PAGE_SIZE != 0) {
@@ -118,12 +119,7 @@ void *page_alloc(size_t num_pages) {
     while (num_pages > power(2, order)) {
         order++;
     }
-    // uart_send_string("Alloc: requiring a block of order ");
-    // uart_send_num(order, "dec");
-    // uart_send_string(".\r\n");
-    
-    // Find the smallest compatible contiguous block
-    // block_t *block = nullptr;
+
     int i;                     // assigned block order
     int block_index = -1;      // assigned block index
     for (i = order; i <= MAX_ORDER; i++) {
@@ -143,6 +139,7 @@ void *page_alloc(size_t num_pages) {
             break;
         }
     }
+    
     if (block_index < 0) {
         uart_send_string("Alloc Error: no free block\n");
         return nullptr;
@@ -276,15 +273,10 @@ void *chunck_alloc(size_t size) {
     while (size > power(2, chunk_order)) {
         chunk_order++;
     }
-    // uart_send_string("Alloc: requiring a chunk of order ");
-    // uart_send_num(chunk_order, "dec");
-    // uart_send_string(".\r\n");
-
+    
+    
     // If there is no free chunk of that order, allocate a page and create chunks
-    if (chunk_list[chunk_order - 4] == nullptr) {
-        // uart_send_string("Alloc: allocating a page to create chuncks of order ");
-        // uart_send_num(chunk_order, "dec");
-        // uart_send_string(".\r\n");
+    if (chunk_list[chunk_order - 4] == 0) {
 
         void *addr = page_alloc(1);
         int page_index = ((unsigned long) addr - ALLOC_BASE) / PAGE_SIZE;
