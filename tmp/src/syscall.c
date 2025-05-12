@@ -103,9 +103,7 @@ void sys_fork(trapframe_t *tf) {
     child_tf->elr_el1 = (unsigned long)child_thread->user_prog + 
         (tf->elr_el1 - (unsigned long) current_thread->user_prog); // Set the child thread's entry point
     child_tf->x[0] = 0; // Set the return value to 0 for the child thread
-    while (1) {
-        uart_send_string("Child thread running\r\n");
-    }
+
     child_thread->prev = NULL; // Set the previous thread to NULL
     child_thread->next = NULL; // Set the next thread to NULL
 
@@ -114,8 +112,6 @@ void sys_fork(trapframe_t *tf) {
     child_thread->context[10] = (unsigned long)child_thread->kernel_stack_base; // Set the stack pointer in the context
 
     thread_enqueue(child_thread); // Add the child thread to the run 
-    uart_send_num(child_thread->priority, "dec");
-    uart_send_string("\r\n");
     tf->x[0] = child_thread->id; // Set the return value to the child thread's ID for the parent thread
 }
 
@@ -166,9 +162,6 @@ void sys_kill(trapframe_t *tf) {
         uart_send_string("Killing current thread (self)\r\n");
         target_thread = current_thread;
     } else {
-        // uart_send_string("Attempting to kill thread with PID: ");
-        // uart_send_num(pid, "dec");
-        // uart_send_string("\r\n");
         target_thread = find_thread_by_id(pid);
     }
     // while (1);
@@ -224,7 +217,7 @@ void sys_sigkill(trapframe_t *tf) {
         target_thread = current_thread;
     } else {
         uart_send_string("Attempting to kill thread with PID: ");
-        uart_send_num(pid, "dec");
+        uart_send_num(pid, "hex");
         uart_send_string("\r\n");
         target_thread = find_thread_by_id(pid);
     }

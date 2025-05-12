@@ -137,8 +137,8 @@ void thread_kill(thread_t *t, int status) {
 
 void thread_exit(void) {
     unsigned long daif = disable_interrupt();
-    uart_send_num(current_thread->id, "dec");
-    uart_send_string(" Thread exiting\n");
+    uart_send_num(current_thread->id, "hex");
+    uart_send_string(" Thread exiting\r\n");
     current_thread->state = THREAD_DEAD; // Set the thread state to dead
     current_thread->next = NULL; // Clear the next pointer
     current_thread->prev = NULL; // Clear the previous pointer
