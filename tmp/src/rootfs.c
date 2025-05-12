@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "mini_uart.h"
 #include "rootfs.h"
 #include "utils.h"

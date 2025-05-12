@@ -3,13 +3,17 @@
 #include "rootfs.h"
 #include "utils.h"
 
+void *__dtb_end = NULL;
+char *rootfs_addr = NULL;
+void *rootfs_end = NULL;
+
 void fdt_traverse(void (*callback)(char *)) {
     struct fdt_header *fdt = (struct fdt_header *) __dtb_addr;
     
     if (be2le(fdt->magic) != 0xd00dfeed) {
         uart_send_string("Invalid device tree magic number\n");
         uart_send_num(be2le(fdt->magic), "hex");
-        uart_send('\n');
+        uart_send_string("\r\n");
         return;
     }
 
@@ -56,7 +60,7 @@ void fdt_traverse(void (*callback)(char *)) {
         } else {
             uart_send_string("Unknown token: ");
             uart_send_num(token, "hex");
-            uart_send('\n');
+            uart_send_string("\r\n");
             break;
         }
     }

@@ -11,6 +11,9 @@
 #define FDT_END        0x00000009  // end of the structure block
 
 extern void *__dtb_addr;
+extern void *__dtb_end;
+extern char *rootfs_addr;
+extern void *rootfs_end;
 
 struct fdt_header {
     uint32_t magic;              // 0xd00dfeed (big-endian)

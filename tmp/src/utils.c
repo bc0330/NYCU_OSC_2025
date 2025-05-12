@@ -7,6 +7,14 @@ void memset(char *s, char c, int n) {
     }
 }
 
+void memcpy(void *dest, const void *src, size_t n) {
+    char *d = dest;
+    const char *s = src;
+    while (n--) {
+        *d++ = *s++;
+    }
+}
+
 int strlen(const char *str) {
     int len = 0;
     while (str[len]) {
@@ -36,7 +44,26 @@ int strcmp(const char *str1, const char *str2) {
     return *str1 == *str2;
 }
 
-unsigned int hex2dec(const char *hex, int len) {
+unsigned int atoi(const char *str) {
+    unsigned int num = 0;
+    while (*str) {
+        if (*str < '0' || *str > '9') {
+            break;
+        }
+        num = num * 10 + (*str - '0');
+        str++;
+    }
+    return num;
+}
+
+inline unsigned long be2le(unsigned int be) {
+    return ((be & 0x000000FF) << 24) |
+           ((be & 0x0000FF00) << 8) |
+           ((be & 0x00FF0000) >> 8) |
+           ((be & 0xFF000000) >> 24);
+}
+
+unsigned long hex2dec(const char *hex, int len) {
     unsigned int dec = 0;
     for (int i = 0; i < len; i++) {
         char c = hex[i];
@@ -51,9 +78,28 @@ unsigned int hex2dec(const char *hex, int len) {
     return dec;
 }
 
-inline unsigned int be2le(unsigned int be) {
-    return ((be & 0x000000FF) << 24) |
-           ((be & 0x0000FF00) << 8) |
-           ((be & 0x00FF0000) >> 8) |
-           ((be & 0xFF000000) >> 24);
+
+unsigned long ahex2int(const char *hex) {
+    unsigned long dec = 0;
+    while (*hex) {
+        char c = *hex++;
+        if (c >= '0' && c <= '9') {
+            dec = dec * 16 + c - '0';
+        } else if (c >= 'a' && c <= 'f') {
+            dec = dec * 16 + c - 'a' + 10;
+        } else if (c >= 'A' && c <= 'F') {
+            dec = dec * 16 + c - 'A' + 10;
+        }
+    }
+    return dec;
 }
+
+
+int power(int base, int exp) {
+    int result = 1;
+    for (int i = 0; i < exp; i++) {
+        result *= base;
+    }
+    return result;
+}
+
